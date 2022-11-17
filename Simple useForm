@@ -1,0 +1,179 @@
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { Button, Typography, Grid } from '@mui/material';
+import { makeStyles } from '@mui/styles';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { FormProvider, RHFSelect, RHFTextField, RHFRadioGroup } from '../../../components/hook-form';
+
+
+const validationSchema = yup.object().shape({
+    sport: yup.string().required('Sport is required').typeError('Sport Required'),
+
+});
+const useStyles = makeStyles((theme) => ({
+    section: {
+        marginTop: 20,
+        border: '1px solid',
+        borderColor: theme.palette.primary.main,
+        padding: 20,
+        borderRadius: 10,
+    },
+    mandatory: {
+        color: 'red',
+    },
+    btn: {
+        margin: 10,
+        width: 180,
+        [theme.breakpoints.down('md')]: {
+            fontSize: 12,
+        },
+    },
+    btnContainer: {
+        marginTop: 40,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        [theme.breakpoints.down('md')]: {
+            justifyContent: 'center',
+        }
+    },
+}));
+
+const allSports = [{ id: 1, sport: 'cricket' }, { id: 2, sport: 'foot ball' }];
+
+
+
+const CreateNewTournament = () => {
+    const navigate = useNavigate();
+    const classes = useStyles();
+
+    const initialValues = {
+        sport: '',
+        tournamentName: '',
+        startDate: '',
+        endDate: '',
+        rewardsRules: '',
+    }
+    const methods = useForm({
+        mode: 'onChange',
+        resolver: yupResolver(validationSchema),
+        defaultValues: initialValues,
+    });
+    const { handleSubmit, watch } = methods;
+
+
+
+    const onSubmit = async (data) => {
+        console.log('data', data);
+        const payload = {
+            sport: data.sport,
+            tournamentName: data.tournamentName,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            rewardsRules: data.rewardsRules,
+        }
+    }
+
+
+    return (
+        <>
+            <Button variant="outlined" onClick={() => navigate(-1)}>
+                <ChevronLeftIcon />
+                Back
+            </Button>
+            <Grid mt={5}>
+                <Typography xs display="flex" alignItems="center" marginBottom={3}>
+                    Home <ChevronRightIcon /> Tournaments
+                </Typography>
+            </Grid>
+            <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+                <div className={classes.section}>
+                    <Typography variant="h6">Tournament</Typography>
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6} md={3} marginTop={2}>
+                            <Typography marginBottom={1}>
+                                Sport
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFSelect name="sport">
+                                <option value="">Select</option>
+                                {allSports?.map((option, index) => (
+                                    <option key={index} value={option.id}>
+                                        {option.sport}
+                                    </option>
+                                ))}
+                            </RHFSelect>
+                        </Grid>
+                    </Grid>
+
+
+                    <Grid container spacing={2} marginTop={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Typography>
+                                Tournament Name
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFTextField name="tournamentName" />
+                        </Grid>
+                    </Grid>
+
+                    <Grid container spacing={2} marginTop={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Typography>
+                                Start Date
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFTextField name="startDate" type="date" />
+                        </Grid>
+                    </Grid>
+
+                    <Grid container spacing={2} marginTop={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Typography>
+                                End Date
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFTextField name="endDate" type="date" />
+                        </Grid>
+                    </Grid>
+
+                    <Grid container spacing={2} marginTop={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Typography>
+                                Import Rewards rule file
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFTextField type="file" name="rewardsRules" />
+                        </Grid>
+                    </Grid>
+
+                    <div className={classes.btnContainer}>
+                        <Button
+                            variant="outlined"
+                            className={classes.btn}
+                            onClick={() => {
+                                setTimeout(() => {
+                                    navigate(-1);
+                                }, 1000);
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            type="submit"
+                            className={classes.btn}
+                        >
+                            Save
+                        </Button>
+                    </div>
+                </div>
+
+            </FormProvider>
+        </>
+    )
+}
+
+export default CreateNewTournament;
