@@ -1,12 +1,22 @@
+import { yupResolver } from '@hookform/resolvers/yup';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Button, Typography, Grid } from '@mui/material';
+import { Button, Grid, Typography } from '@mui/material';
 import { makeStyles } from '@mui/styles';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { FormProvider, RHFSelect, RHFTextField, RHFRadioGroup } from '../../../components/hook-form';
+import ErrorAlert from '../../../components/alert/ErrorAlert';
+import SuccessAlert from '../../../components/alert/SuccessAlert';
+import { FormProvider, RHFSelect, RHFTextField } from '../../../components/hook-form';
+import Loader from '../../../components/loader/Loader';
+import { ACCESS_FORBIDDEN, ACCESS_FORBIDDEN_MSG, BAD_REQUEST, ERROR_MSG, GET_SUCCESS, NETWORK_ERROR, CREATE_SUCCESS } from '../../../constant';
+import { getAllSports } from '../../../services/sportService';
+import { addTournaments } from '../../../services/tournamentService';
+import { PLAYER_SERVICE_BASE_URL } from '../../../config';
+
 
 
 const validationSchema = yup.object().shape({
@@ -48,10 +58,18 @@ const allSports = [{ id: 1, sport: 'cricket' }, { id: 2, sport: 'foot ball' }];
 const CreateNewTournament = () => {
     const navigate = useNavigate();
     const classes = useStyles();
+    const [allSport, setAllSport] = useState([]);
+    const [alertMsg, setAlertMsg] = useState('');
+    const [isSuccess, setSuccess] = useState(false);
+    const [isLoading, setLoading] = useState(false);
+    const [isError, setError] = useState(false);
+    const [rewardFile, setRewardFile] = useState(null);
+    const accessToken = localStorage.getItem('accessToken');
 
     const initialValues = {
         sport: '',
-        tournamentName: '',
+        name: '',
+        alias: '',
         startDate: '',
         endDate: '',
         rewardsRules: '',
@@ -65,17 +83,84 @@ const CreateNewTournament = () => {
 
 
 
+
     const onSubmit = async (data) => {
+
         console.log('data', data);
+
         const payload = {
             sport: data.sport,
-            tournamentName: data.tournamentName,
+            name: data.name,
             startDate: data.startDate,
             endDate: data.endDate,
-            rewardsRules: data.rewardsRules,
-        }
-    }
+            rewardRule: rewardFile,
+        };
 
+        setError(false);
+
+        const res = await addTournaments(payload);
+
+        if (res.status === CREATE_SUCCESS) {
+            setAlertMsg(res?.data?.message || 'Tournament Created Successfully');
+            setLoading(false);
+            setSuccess(true);
+        }
+        if (res.code === BAD_REQUEST) {
+            setLoading(false);
+            if (res?.response?.status === ACCESS_FORBIDDEN) {
+                setAlertMsg(res?.response?.data.message || res?.response?.data || ACCESS_FORBIDDEN_MSG);
+                setError(true);
+            }
+            else {
+                setError(true);
+                setAlertMsg(res?.response?.data.message || res?.response?.data?.error || res?.response?.data || ERROR_MSG);
+            }
+        }
+        setLoading(false);
+    };
+
+
+
+
+
+    const handleMobIconUpload = async (e) => {
+        setLoading(true);
+        if (e.target.files.length) {
+            const formData = new FormData();
+            formData.append('playerCounterIcon', e.target.files[0]);
+            formData.append('name', e.target.files[0].name);
+
+            try {
+                const response = await axios({
+                    method: 'post',
+                    url: `${PLAYER_SERVICE_BASE_URL}/document/upload`,
+                    data: formData,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                        Authorization: `Bearer ${accessToken || ''}`,
+                    },
+                })
+                    .then((res) => {
+                        setRewardFile(res.data);
+                        setLoading(false);
+                    })
+                    .catch((err) => {
+                        if (err.code === NETWORK_ERROR) {
+                            setLoading(false);
+                            setError(true);
+                            setAlertMsg(err?.message || ERROR_MSG);
+                            document.getElementById('rewardRule').value = '';
+                        }
+                        setLoading(false);
+                    });
+            } catch (error) {
+                console.log(error);
+            }
+        } else {
+            setRewardFile(null);
+        }
+        setLoading(false);
+    };
 
     return (
         <>
@@ -115,7 +200,19 @@ const CreateNewTournament = () => {
                                 Tournament Name
                                 <span className={classes.mandatory}>*</span>
                             </Typography>
-                            <RHFTextField name="tournamentName" />
+                            <RHFTextField name="name" />
+                        </Grid>
+                    </Grid>
+
+
+
+                    <Grid container spacing={2} marginTop={2}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <Typography>
+                                Tournament Short Name
+                                <span className={classes.mandatory}>*</span>
+                            </Typography>
+                            <RHFTextField name="alias" />
                         </Grid>
                     </Grid>
 
@@ -145,7 +242,10 @@ const CreateNewTournament = () => {
                                 Import Rewards rule file
                                 <span className={classes.mandatory}>*</span>
                             </Typography>
-                            <RHFTextField type="file" name="rewardsRules" />
+                            <input type="file" name="rewardRule" id="rewardRule" onChange={handleMobIconUpload} />
+                            {rewardFile && (
+                                <img src={rewardFile} alt="icon" width={80} height={80} className={classes.icon} />
+                            )}
                         </Grid>
                     </Grid>
 
