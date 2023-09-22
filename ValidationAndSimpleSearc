@@ -1,0 +1,87 @@
+import "./styles.css";
+import React, { useState } from "react";
+
+export default function App() {
+  const [error, setError] = useState(false);
+  const [passError, setPassError] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const [state, setState] = useState({
+    name: "",
+    password: ""
+  });
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
+
+  const handleName = (e) => {
+    setName(e.target.value);
+  };
+
+  const handlePass = (e) => {
+    setPassword(e.target.value);
+  };
+
+  const handelSubmit = () => {
+    if (name === "") {
+      setError(true);
+    } else if (password === "") {
+      setError(false);
+      setPassError(true);
+    } else {
+      setError(false);
+      setPassError(false);
+      console.log("data:", {
+        name: name,
+        password: password
+      });
+    }
+  };
+
+  const list = [
+    { id: 1, name: "naveen" },
+    { id: 2, name: "kailash" },
+    { id: 3, name: "veena" },
+    { id: 4, name: "dharama" },
+    { id: 5, name: "sukrith" }
+  ];
+
+  return (
+    <div className="App">
+      <form>
+        <p>
+          <label>User Name: </label>
+          <input value={name} onChange={handleName} />
+        </p>
+        {error && <p style={{ color: "red" }}>Please enter your name</p>}
+        <label>Password: </label>
+
+        <input value={password} onChange={handlePass} />
+        {passError && (
+          <p style={{ color: "red" }}>Please enter your password</p>
+        )}
+      </form>
+      {list
+        .filter((item) => {
+          if (search === "") return true;
+
+          return item.name.toLowerCase().includes(search.toLowerCase());
+        })
+        .map((item) => (
+          <p key={item.id}>{item.name}</p>
+        ))}
+
+      <p>
+        Search : <input onChange={handleSearch} />
+      </p>
+      <p>
+        <button value={search} onClick={handelSubmit}>
+          Submit
+        </button>
+      </p>
+    </div>
+  );
+}
